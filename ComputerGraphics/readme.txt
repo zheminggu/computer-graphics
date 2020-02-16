@@ -1,15 +1,15 @@
-Read Me
+# Read Me
 This project is build with glfw3.3 and opencv.
 To load model successfully, the direction of model file should not contain any space
 
-Project structure 
+## Project structure 
 Math dir: 
 Math: define constant variables of math
 Matrix4: define a 4*4 matrix, implement some functional operation, such as Mat4*Mat4
 Vector3: define a 3 dimensional vector, use to store point, manipulate points
 Vector4: defines a 4 dimensional vector, use to calculate transformation
 
-Utils dir:
+## Utils dir:
 Draw: openCV method to draw lines, points in the future it will support draw colors.
 File: use to open model, and save prefabs(not achieve yet)
 
