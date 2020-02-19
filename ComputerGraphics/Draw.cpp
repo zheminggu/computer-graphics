@@ -57,7 +57,7 @@ void ImageBufferToFile(Vector4 imageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT]) {
 }
 
 //bool finish_a_draw = false;
-void Draw::DrawPoints(Vector4 imageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT]) {
+void Draw::DrawPoints(float imageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT][4]) {
 	
 	//glPointSize(5);
 	glBegin(GL_POINTS);

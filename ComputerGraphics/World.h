@@ -51,8 +51,7 @@ private:
 	std::vector<Camera> Cameras;
 	std::vector<Model> Models;
 	std::vector<RenderModel> RenderModels;
-	Vector4 ImageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT];
-	float ZBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT];
+
 
 };
 #endif // !WORLD_H

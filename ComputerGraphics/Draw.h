@@ -10,7 +10,7 @@ class Vector4;
 class Draw {
 public:
 	static void DrawLine(Vector3 startPosition, Vector3 endPosition);
-	static void DrawPoints(Vector4 imageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT]);
+	static void DrawPoints(float imageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT][4]);
 
 	
 

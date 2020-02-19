@@ -16,7 +16,7 @@
 
 Model File::OpenFile() {
 	std::ifstream ifs;
-	ifs.open("C:\\Users\\zhemi\\Desktop\\GWU\\Graduate Term 2\\CG\\Data\\D files\\nteapot6.d.txt");
+	ifs.open("C:\\Users\\zhemi\\Desktop\\GWU\\Graduate Term 2\\CG\\Data\\D files\\cow.d.txt");
 	std::string line;
 	Model model = Model();
 	//get the first line to define how many vertices and surfaces

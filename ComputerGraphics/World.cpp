@@ -11,6 +11,10 @@
 #include "Draw.h"
 #include "Debug.h"
 
+float ZBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT] = {};
+float ImageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT][4] = {};
+
+
 World::World()
 {
 	mainCamera = NULL;
@@ -186,7 +190,6 @@ void World::RegulateRenderModels() {
 
 void World::SurfacesToEdgeTables()
 {
-	
 	this->edgeTables.clear();
 	std::vector<EdgeTable> edge_table_model;
 	for (auto& model : RenderModels) {
@@ -209,13 +212,22 @@ bool compareEdges_X(const ModelEdge& edge1, const ModelEdge& edge2) {
 	return false;
 }
 
-
+int min_height = 0;
+int max_height = 0;
+int w_start = 0;
+int w_end = 0;
+Vector4 color_start;
+Vector4 color_end;
+float z_start = 0;
+float z_end = 0;
+Vector4 color_slope_here;
+float z_slope_here = 0;
 
 void World::CreateImage()
 {
+	std::vector<ModelEdge> active_edge_table;
 	InitZBuffer();
 	InitImageBuffer();
-	std::vector<ModelEdge> active_edge_table;
 	auto update_active_edge_table = [&](int h) {
 		active_edge_table.erase(std::remove_if(active_edge_table.begin(), active_edge_table.end(), [&](const ModelEdge& model) {
 			return (int)model.Ymax <= h;
@@ -230,16 +242,7 @@ void World::CreateImage()
 			edge.start_z = edge.start_z + edge.z_slope;
 		}
 	};
-	int min_height = 0;
-	int max_height = 0;
-	int w_start = 0;
-	int w_end = 0;
-	Vector4 color_start;
-	Vector4 color_end;
-	float z_start = 0;
-	float z_end = 0;
-	Vector4 color_slope_here;
-	float z_slope_here;
+	
 	for (auto& et :this->edgeTables)
 	{
 		min_height = et.edge_list.begin()->first;
@@ -248,6 +251,8 @@ void World::CreateImage()
 				max_height = (int)e.Ymax;
 			}
 		}
+		min_height = clamp(min_height, 0, Screen_Height);
+		max_height = clamp(max_height, 0, Screen_Height);
 		active_edge_table.clear();
 
 		for (auto& h = min_height; h < max_height; h++)
@@ -274,8 +279,8 @@ void World::CreateImage()
 			}
 			for (auto i = 0; i < active_edge_table.size()-1; i+=2)
 			{
-				w_start =clamp((int) active_edge_table[i].Xmin,0, Screen_Weight);
-				w_end = clamp((int)active_edge_table[i + 1].Xmin,0, Screen_Weight);
+				w_start =clamp(active_edge_table[i].Xmin,0, Screen_Weight);
+				w_end = clamp(active_edge_table[i + 1].Xmin,0, Screen_Weight);
 				color_start = *active_edge_table[i].start_color;
 				color_end = *active_edge_table[i + 1].start_color;
 				z_start = active_edge_table[i].start_z;
@@ -294,9 +299,11 @@ void World::CreateImage()
 						color_start.GetZ();
 						color_start.GetW();*/
 						//Debug::Log(h, w);
-						ImageBuffer[h][w].Set(color_start.GetX(), color_start.GetY(), color_start.GetZ(), color_start.GetW());
+						ImageBuffer[h][w][0] = color_start.GetX();
+						ImageBuffer[h][w][1] = color_start.GetY();
+						ImageBuffer[h][w][2] = color_start.GetZ();
+						ImageBuffer[h][w][3] = color_start.GetW();
 
-	
 						ZBuffer[h][w] = z_start;
 						//Debug::Log("now zbuffer[h][w] is", ZBuffer[h][w]);
 					}
@@ -308,24 +315,24 @@ void World::CreateImage()
 	//Debug::Log("finish print");
 }
 
-void World::HSLtoRGBColor() {
-	Vector4 RGBcolor;
-
-	for (int i = 0; i < SCREEN_HEIGHT; i++)
-	{
-		for (int j = 0; j < SCREEN_WEIGHT; j++)
-		{
-			//glPointSize(2.0);
-			RGBcolor = hslToRgb(ImageBuffer[i][j].GetX(), ImageBuffer[i][j].GetY(), ImageBuffer[i][j].GetZ());
-			ImageBuffer[i][j].Set(RGBcolor.GetX() / 255.f, RGBcolor.GetY() / 255.f, RGBcolor.GetZ() / 255.f,255);
-			/*if (RGBcolor.GetX()!=0)
-			{
-				Debug::Log("here");
-				ImageBuffer[i][j].Print();
-			}*/
-		}
-	}
-}
+//void World::HSLtoRGBColor() {
+//	Vector4 RGBcolor;
+//
+//	for (int i = 0; i < SCREEN_HEIGHT; i++)
+//	{
+//		for (int j = 0; j < SCREEN_WEIGHT; j++)
+//		{
+//			//glPointSize(2.0);
+//			RGBcolor = hslToRgb(ImageBuffer[i][j].GetX(), ImageBuffer[i][j].GetY(), ImageBuffer[i][j].GetZ());
+//			ImageBuffer[i][j].Set(RGBcolor.GetX() / 255.f, RGBcolor.GetY() / 255.f, RGBcolor.GetZ() / 255.f,255);
+//			/*if (RGBcolor.GetX()!=0)
+//			{
+//				Debug::Log("here");
+//				ImageBuffer[i][j].Print();
+//			}*/
+//		}
+//	}
+//}
 
 void World::InitZBuffer()
 {
@@ -344,7 +351,10 @@ void World::InitImageBuffer()
 	{
 		for (int j = 0; j < SCREEN_WEIGHT; j++)
 		{
-			ImageBuffer[i][j].Zero();
+			ImageBuffer[i][j][0] = 0;
+			ImageBuffer[i][j][1] = 0;
+			ImageBuffer[i][j][2] = 0;
+			ImageBuffer[i][j][3] = 0;
 		}
 	}
 }

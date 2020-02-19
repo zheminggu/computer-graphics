@@ -14,10 +14,10 @@
 		Vector4(const Vector3& vector);
 		~Vector4(void) {}
 
-		inline float GetX(void) { return this->vec[0]; }
-		inline float GetY(void) { return this->vec[1]; }
-		inline float GetZ(void) { return this->vec[2]; }
-		inline float GetW(void) { return this->vec[3]; }
+		inline float GetX(void) { return vec[0]; }
+		inline float GetY(void) { return vec[1]; }
+		inline float GetZ(void) { return vec[2]; }
+		inline float GetW(void) { return vec[3]; }
 
 		inline void Set(float x, float y, float z, float w) {
 			vec[0] = x;

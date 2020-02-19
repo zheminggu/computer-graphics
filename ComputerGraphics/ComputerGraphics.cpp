@@ -112,7 +112,7 @@ int main(void)
 		if (preview_mode) {
 			//std::cout << "x: " <<x << std::endl;
 			x = x + 0.5 * delta_time;
-			Vector3 newCameraPosition = Vector3(15 * sin(x), 0, 15 * cos(x));
+			Vector3 newCameraPosition = Vector3(20 * sin(x), 0, 20 * cos(x));
 			world.SetCameraPosition(newCameraPosition);
 			world.PreRun();
 		}

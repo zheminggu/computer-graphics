@@ -19,7 +19,8 @@ Camera::Camera()
 	//set these variables need change mat perspective
 	FOV = PI / 2;
 	//aspect = 9 / 16;
-	aspect = 1 / 1;
+	//aspect = 1 / 1;
+	aspect = 640 / 480;
 	nearClippingPlane = new ClippingPlane(1.f);
 	farClippingPlane = new ClippingPlane(1000.f);
 
@@ -137,7 +138,7 @@ void Camera::ComputeMatPers(void)
 	float r = 1 / std::tan(this->FOV/2);
 	M_pers = new Matrix4(	r/aspect, 0, 0, 0,
 							0, r, 0, 0,
-							0, 0, f / (f - d), -d * f / (f - d),
+							0, 0, -(f+d) / (f - d), -2*d * f / (f - d),
 							0, 0, 1, 0);
 
 	//std::cout << "On Mat pers change" << std::endl;
