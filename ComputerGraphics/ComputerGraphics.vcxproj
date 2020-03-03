@@ -72,8 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\zhemi\Documents\MyCoding\CPP\ComputerGraphics\ComputerGraphics\glfw-3.3.bin.WIN32\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\zhemi\Documents\MyCoding\CPP\ComputerGraphics\ComputerGraphics\glfw-3.3.bin.WIN32\lib-vc2019;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
