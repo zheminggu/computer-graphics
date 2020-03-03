@@ -23,20 +23,58 @@
 World world = World();
 bool preview_mode = false;
 bool lbutton_down = false;
+bool scale_big = false;
+bool scale_small = false;
 double xpos = 0, ypos = 0;
 double lastPosx = 0, lastPosy = 0;
 double current_cameraPositionx=0, current_cameraPositiony=0;
 double delta_x = 0;
 double delta_y = 0;
-
+int shadingType = CONSTANT_SHADING;
+bool changeShadingType = false;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (key == GLFW_KEY_E && action == GLFW_PRESS) {
-		preview_mode = true;
+	if (action == GLFW_PRESS)
+	{
+		switch (key)
+		{
+		case GLFW_KEY_1:
+			shadingType = CONSTANT_SHADING;
+			changeShadingType = true;
+			break;
+		case GLFW_KEY_2:
+			shadingType = GOURAUD_SHADING;
+			changeShadingType = true;
+			break;
+		case GLFW_KEY_3:
+			shadingType = PHONG_SHADING;
+			changeShadingType = true;
+			break;
+		case GLFW_KEY_E:
+			preview_mode = true;
+			break;
+		case GLFW_KEY_D:
+			preview_mode = false;
+			break;
+		case GLFW_KEY_W:
+			scale_big = true;
+			scale_small = false;
+			break;
+		case GLFW_KEY_S:
+			scale_big = false;
+			scale_small = true;
+			break;
+		case GLFW_KEY_A:
+			scale_small = false;
+			scale_big = false;
+			break;
+
+		default:
+			break;
+		}
+
 	}
-	else if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-		preview_mode = false;
-	}
+
 }
 
 static void mouse_callback(GLFWwindow* window, int button, int action, int mods)
@@ -56,25 +94,48 @@ static void mouse_callback(GLFWwindow* window, int button, int action, int mods)
 
 int main(void)
 {
-	//std::cout << "please input file path" << std::endl;
-	//std::string file_path;
-	////std::cin >> file_path;
-	//std::getline(std::cin,file_path);
+	/*std::cout << "please input file path" << std::endl;
+	std::string file_path;
+	std::cin >> file_path;*/
+	float distance = 8;
+	bool show_FPS = false;
+	int modelNumber = 6;
+#pragma region Init World
+	world.SetWorldColor(Vector3(255, 255, 255), 0.1f);
 
-	//open file
+	//init the world
 	auto file = File();
 	auto model = file.OpenFile(/*file_path*/);
-	model.PrintModelInfo();
-	Camera camera =Camera();
-	world.LoadCamera(camera);
-	world.LoadModel(model);
-	Vector3 offset = Vector3(10, 0, 0);
-	world.LoadModel(model,offset);
-	//ready to run
-	world.InitWorld();
-	world.PreRun();
-	float x = 0;
+	Vector3 modelColor;
+	//model.SetModelColor(modelColor, 1.f);
+	//model.PrintModelInfo();
+	//world.LoadModel(model);
 
+	for (int i = 0; i < modelNumber; i++)
+	{
+		Vector3 offset = Vector3(cos(2*PI / modelNumber * i) * 5, 0, sin(2 * PI / modelNumber * i) * 5);
+		modelColor = Vector3(std::rand()%255, std::rand() % 255, std::rand() % 255);
+		model.SetModelColor(modelColor, 1.f);
+		world.LoadModel(model, offset);
+	}
+	
+
+	Vector3 lightDir = Vector3(0, 0, 10);
+	Vector3 LightColor = Vector3(50, 158, 198);
+	Light light = Light(lightDir, LightColor, 64, 1.f);
+	world.LoadLight(light);
+
+	Camera camera = Camera();
+	Vector3 cameraPosition = Vector3(0, 0, distance);
+	camera.SetPosition(cameraPosition);
+	world.LoadCamera(camera);
+
+	world.InitWorld();
+	world.PreRun(shadingType);
+#pragma endregion
+
+
+	float x = 0;
 	float now=0, previous=0;
 	float delta_time=(float)glfwGetTime();
 
@@ -106,15 +167,18 @@ int main(void)
 		now = glfwGetTime();
 		delta_time = now - previous;
 		//show FPS
-		//std::cout << "FPS: " << 1 / delta_time << std::endl;
+		if (show_FPS)
+		{
+			std::cout << "FPS: " << 1 / delta_time << std::endl;
+		}
 
 		//hit E button to start preview mode hit D to end preview mode
 		if (preview_mode) {
 			//std::cout << "x: " <<x << std::endl;
 			x = x + 0.5 * delta_time;
-			Vector3 newCameraPosition = Vector3(20 * sin(x), 0, 20 * cos(x));
+			Vector3 newCameraPosition = Vector3(distance * sin(x), distance * cos(x), distance * cos(x));
 			world.SetCameraPosition(newCameraPosition);
-			world.PreRun();
+			world.PreRun(shadingType);
 		}
 		
 		//left mouse button down, then you could drag the model
@@ -126,9 +190,9 @@ int main(void)
 			delta_y =0.5* delta_time * delta_y;
 			//std::cout << "delta x: " << delta_x << " delta y: " << delta_y << std::endl;
 
-			Vector3 newCameraPosition =Vector3(std::sin(current_cameraPositionx+ delta_x) * 10, /*10*(ypos-240)/240*/0, std::cos(current_cameraPositionx+delta_y) * 10);
+			Vector3 newCameraPosition =Vector3(std::sin(current_cameraPositionx+ delta_x) * distance, 0, std::cos(current_cameraPositionx+delta_y) * distance);
 			world.SetCameraPosition(newCameraPosition);
-			world.PreRun();
+			world.PreRun(shadingType);
 
 			current_cameraPositionx += delta_x;
 			current_cameraPositionx += delta_y;
@@ -136,6 +200,27 @@ int main(void)
 			lastPosy = ypos;
 		}
 
+		if (scale_big)
+		{
+			distance = distance- delta_time *10;
+			Vector3 newCameraPosition = Vector3(0,0, distance);
+			world.SetCameraPosition(newCameraPosition);
+			world.PreRun(shadingType);
+		}
+
+		if (scale_small)
+		{
+			distance += delta_time *10;
+			Vector3 newCameraPosition = Vector3(0, 0, distance);
+			world.SetCameraPosition(newCameraPosition);
+			world.PreRun(shadingType);
+		}
+
+		if (changeShadingType)
+		{
+			world.PreRun(shadingType);
+			changeShadingType = false;
+		}
 		world.Run();
 		previous = now;
 

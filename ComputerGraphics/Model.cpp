@@ -105,12 +105,12 @@ int Model::GetNumSurfaces()
 
 Vector3 Model::GetPosition() const
 {
-	return *worldOffset;
+	return worldOffset;
 }
 
 void Model::SetPosition(Vector3& position)
 {
-	worldOffset = &position;
+	worldOffset = position;
 }
 
 std::vector<Vector3> Model::GetVertices()
@@ -125,9 +125,9 @@ std::vector<Surface> Model::GetSurfaces()
 
 void Model::LocalToWorld()
 {
-	Matrix4 m_localToWorld = Matrix4(1, 0, 0, this->worldOffset->GetX(),
-									 0, 1, 0, this->worldOffset->GetY(),
-									 0, 0, 1, this->worldOffset->GetZ(),
+	Matrix4 m_localToWorld = Matrix4(1, 0, 0, this->worldOffset.GetX(),
+									 0, 1, 0, this->worldOffset.GetY(),
+									 0, 0, 1, this->worldOffset.GetZ(),
 									 0, 0, 0, 1);
 	Vector4 tempv;
 	for (auto& v :vertices)

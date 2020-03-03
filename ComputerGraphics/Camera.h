@@ -1,7 +1,9 @@
 #pragma once
 #ifndef CAMERA_H
 #define CAMERA_H
-
+#include "Vector3.h"
+#include "Matrix4.h"
+#include "ClippingPlane.h"
 class Vector3;
 class Matrix4;
 class ClippingPlane;
@@ -28,27 +30,31 @@ public:
 	// set camera aspect input height and weight
 	void SetAspect(float weight, float height);
 	void LocalToWorld(Matrix4& m_localToWorld);// to do 
+
+	inline Vector3 GetFront() {
+		return N;
+	}
 private: 
 	void ComputeMatView(void);
 	void ComputeMatPers(void);
 
 private:
-	Vector3* localPosition;
-	Vector3* worldPosition;
-	Vector3* upVector;
-	Vector3* P_ref;
+	Vector3 localPosition;
+	Vector3 worldPosition;
+	Vector3 upVector;
+	Vector3 P_ref;
 
-	//Vector3* N;
-	//Vector3* U;
-	//Vector3* V;
+	Vector3 N;
+	Vector3 U;
+	Vector3 V;
 
-	Matrix4* M_view;
-	Matrix4* M_pers;
+	Matrix4 M_view;
+	Matrix4 M_pers;
 
 	float FOV;
 	float aspect;
-	ClippingPlane* nearClippingPlane;
-	ClippingPlane* farClippingPlane;
+	ClippingPlane nearClippingPlane;
+	ClippingPlane farClippingPlane;
 
 
 };

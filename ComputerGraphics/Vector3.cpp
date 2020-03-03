@@ -96,14 +96,15 @@ float Vector3::Length() const
 	return (float)sqrt((vec[0] * vec[0]) + (vec[1] * vec[1]) + (vec[2] * vec[2]));
 }
 
-void Vector3::Normalize()
+Vector3 Vector3::Normalize()
 {
 	float length = Length();
-	if (length == 1 || length == 0)return;
+	if (length == 1 || length == 0)return *this;
 	float scalefactor = 1.0f / length;
 	vec[0] *= scalefactor;
 	vec[1] *= scalefactor;
 	vec[2] *= scalefactor;
+	return *this;
 }
 
 Vector3 Vector3::Cross(const Vector3& vector) const

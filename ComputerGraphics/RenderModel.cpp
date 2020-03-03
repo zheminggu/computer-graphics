@@ -12,12 +12,13 @@
 
 RenderModel::RenderModel()
 {
-	
+
 }
 
 RenderModel::~RenderModel()
 {
 }
+
 
 void RenderModel::AddVertices(Vector4& point)
 {
@@ -132,28 +133,73 @@ void RenderModel::PrintSurfaces(int number)
 	}
 }
 
-std::vector<Vector4> global_vertice_color;
-bool have_calculate_once = false;
-void RenderModel::CalculateColor()
+
+void RenderModel::CalculateColor(Vector3& cameraDirection, std::vector<Light>& lights, Vector3& worldColor, float k_a)
 {
-	if (have_calculate_once)
+
+	int n = 0;
+	float k_s = 0.f;
+	float smoothstaff = 0.f;
+	Vector3 H = Vector3();
+	Vector3 lightColor = Vector3();
+	Vector3 color;
+	Vector3 lightDir = Vector3();
+	for (auto& light: lights)
 	{
-		this->vertice_color = global_vertice_color;
-	}
-	else
-	{
+		n = light.GetN();
+		k_s = light.GetK_S();
+		lightDir = light.GetLightDirection();
+		smoothstaff = 0;
+		H = lightDir.Normalize() + -cameraDirection.Normalize();
+		H = H.Normalize();
+		lightColor = light.GetLightColor();
 		this->vertice_color.clear();
 		for (int i = 0; i < this->vertices.size(); i++)
 		{
-			//HslColor = Draw::rgbToHsl(rand() % 255 , rand() % 255, rand() % 255);
-			this->vertice_color.push_back(Vector4(rand() % 255 / 255.f, rand() % 255 / 255.f, rand() % 255 / 255.f, 255));
-			//this->vertice_color.push_back(Vector4(rand() % 255/255.f, 0, 0,255));
-			//this->vertice_color.push_back(rgbToHsl(rand() % 255, rand() % 255, rand() % 255));
+			if (vertice_vector[i] * H > 0)
+			{
+				smoothstaff = powf(vertice_vector[i] * H, n);
+			}
+			else
+			{
+				smoothstaff = 0;
+			}
+			color = k_a * worldColor + this->modelColor *this->k_d * (vertice_vector[i] * lightDir) + lightColor * smoothstaff * k_s;
+
+			vertice_color.push_back(Vector4(color.GetX(), color.GetY(), color.GetZ(), 255));
+			//vertice_color.push_back(Vector4(vertice_vector[i].GetX()*255, vertice_vector[i].GetY() * 255, vertice_vector[i].GetZ() * 255, 255));
 		}
-		global_vertice_color = this->vertice_color;
-		have_calculate_once = true;
 	}
-	
+}
+
+Vector4 RenderModel::CalculateColor(Vector3& vector, Vector3& cameraDirection, std::vector<Light>& lights, Vector3& worldColor,Vector3& modelColor, float k_a, float k_d)
+{
+
+	int n = 0;
+	float k_s = 0.f;
+	float smoothstaff = 0.f;
+	Vector3 H = Vector3();
+	Vector3 lightColor = Vector3();
+	Vector3 color = k_a * worldColor;
+	Vector3 lightDir = Vector3();
+	vector = vector.Normalize();
+	for (auto& light : lights)
+	{
+		n = light.GetN();
+		k_s = light.GetK_S();
+		lightDir = light.GetLightDirection();
+		smoothstaff = 0;
+		H = lightDir.Normalize() + -cameraDirection.Normalize();
+		H = H.Normalize();
+		lightColor = light.GetLightColor();
+		if (vector * H > 0)
+		{
+			smoothstaff = powf(vector * H, n);
+		}
+		color += modelColor * k_d* (vector* lightDir) + lightColor * smoothstaff * k_s;
+		//color = 255* vector/* + Vector3(255, 255, 255) * smoothstaff * k_s*/;
+	}
+	return Vector4(color.GetX(), color.GetY(), color.GetZ(), 255);
 }
 
 void RenderModel::RegulateModel()
@@ -176,8 +222,6 @@ bool compareEdges_YXS(const ModelEdge& edge1, const ModelEdge& edge2) {
 	return false;
 }
 
-
-
 std::vector<EdgeTable> RenderModel::CreateEdgeTable()
 {
 	std::vector<EdgeTable> edge_tables_this_model;
@@ -186,6 +230,8 @@ std::vector<EdgeTable> RenderModel::CreateEdgeTable()
 	Vector4 next_point;
 	Vector4 current_color;
 	Vector4 next_color;
+	Vector3 current_vector;
+	Vector3 next_vector;
 	float current_z = 0;
 	float next_z = 0;
 	float Ymax = 0;
@@ -194,6 +240,8 @@ std::vector<EdgeTable> RenderModel::CreateEdgeTable()
 	float slope = 0;
 	Vector4 start_color;
 	Vector4 color_slope;
+	Vector3 start_vector;
+	Vector3 vector_slope;
 	float start_z = 0;
 	float z_slope = 0;
 	float cx = 0;
@@ -216,12 +264,16 @@ std::vector<EdgeTable> RenderModel::CreateEdgeTable()
 				next_point = vertices[current_surface[i + 1]];
 				current_color =vertice_color[current_surface[i]];
 				next_color = vertice_color[current_surface[i + 1]];
+				current_vector = vertice_vector[current_surface[i]];
+				next_vector = vertice_vector[current_surface[i + 1]];
 			}
 			else {
 				current_point = vertices[current_surface[i]];
 				next_point = vertices[current_surface[0]];
 				current_color = vertice_color[current_surface[i]];
 				next_color = vertice_color[current_surface[0]];
+				current_vector = vertice_vector[current_surface[i]];
+				next_vector = vertice_vector[current_surface[0]];
 			}
 			current_z = current_point.GetZ();
 			next_z = next_point.GetZ();
@@ -245,6 +297,7 @@ std::vector<EdgeTable> RenderModel::CreateEdgeTable()
 				height = ny;
 				start_color = next_color;
 				start_z = next_z;
+				start_vector = next_vector;
 			}
 			else //the current is on the bottom
 			{
@@ -253,22 +306,24 @@ std::vector<EdgeTable> RenderModel::CreateEdgeTable()
 				height = cy;
 				start_color = current_color;
 				start_z = current_z;
+				start_vector = current_vector;
 			}
 
 			if ((int)cy ==(int)ny)
 			{
-				slope = 0;
+				continue;
+				/*slope = 0;
 				color_slope = Vector4(0, 0, 0, 0);
-				z_slope = 0;
+				z_slope = 0;*/
 			}
 			else {
 				slope = (cx - nx) / (cy - ny);
 				color_slope = (current_color - next_color) / (cy - ny);
 				z_slope = (current_z - next_z) / (cy - ny);
+				vector_slope = (current_vector -next_vector)/ (cy - ny);
 			}
-
 			
-			ModelEdge edge = ModelEdge(height, Ymax, Xmin, slope, start_color, color_slope, start_z, z_slope);
+			ModelEdge edge = ModelEdge(height, Ymax, Xmin, slope, start_color, color_slope,start_vector, vector_slope, start_z, z_slope);
 			edges_of_surface.push_back(edge);
 		}
 
@@ -276,6 +331,7 @@ std::vector<EdgeTable> RenderModel::CreateEdgeTable()
 		std::sort(edges_of_surface.begin(), edges_of_surface.end(), compareEdges_YXS);
 
 		newEdgeTable = EdgeTable();
+		newEdgeTable.SetModelColor(modelColor, k_d);
 		for (auto& edge : edges_of_surface) {
 			newEdgeTable.AddEdge(edge);
 		}
@@ -285,78 +341,47 @@ std::vector<EdgeTable> RenderModel::CreateEdgeTable()
 	return edge_tables_this_model;
 }
 
-/**
- * Converts an RGB color value to HSL. Conversion formula
- * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
- * Assumes r, g, and b are contained in the set [0, 255] and
- * returns h, s, and l in the set [0, 1].
- *
- * @param   {number}  r       The red color value
- * @param   {number}  g       The green color value
- * @param   {number}  b       The blue color value
- * @return  {Array}           The HSL representation
- */
-
-int maxmum(int a, int b, int c)
+void RenderModel::InitVerticeVector()
 {
-	int n = (a < b) ? b : a;
-	return ((n < c) ? c : n);
-}
-
-int minimum(int a, int b, int c)
-{
-	int n = (a > b) ? b : a;
-	return ((n > c) ? c : n);
-}
-
-float maxmum(float a, float b, float c)
-{
-	float n = (a < b) ? b : a;
-	return ((n < c) ? c : n);
-}
-
-float minimum(float a, float b, float c)
-{
-	float n = (a > b) ? b : a;
-	return ((n > c) ? c : n);
-}
-
-
-Vector4 RenderModel::rgbToHsl(float r, float g, float b) {
-	int o_r = r;
-	int o_g = g;
-	int o_b = b;
-	int max_c = maxmum((int)r, (int)g, (int)b);
-	int min_c = minimum((int)r, (int)g, (int)b);
-	r /= 255., g /= 255., b /= 255.;
-	float max = maxmum(r, g, b);
-	float min = minimum(r, g, b);
-	float h, s, l = (max + min) / 2;
-
-
-
-	if (max_c == min_c) {
-		h = s = 0; // achromatic
+	vertice_vector.clear();
+	for (int  i = 0; i < vertices.size(); i++)
+	{
+		vertice_vector.push_back(Vector3(0, 0, 0));
 	}
-	else {
-		float d = max - min;
-		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-		if (max_c == o_r)
-		{
-			h = (g - b) / d + (g < b ? 6 : 0);
-		}
-		else if (max_c == o_g)
-		{
-			h = (b - r) / d + 2;
-		}
-		else
-		{
-			h = (r - g) / d + 4;
-		}
+	Vector3 V1;
+	Vector3 V2;
+	Vector3 Np;
+	std::vector<int> sur;
+	for (auto s :surfaces)
+	{
+		sur = s.GetSurface();
+		// first one
+		V1 = (vertices[sur[0]] - vertices[sur[sur.size()-1]]).ToVector3();
+		V2 = (vertices[sur[1]] - vertices[sur[0]]).ToVector3();
+		Np = Vector3::Cross(V2, V1);
+		vertice_vector[sur[0]].Add(Np.GetX(), Np.GetY(), Np.GetZ());
+		//last one
+		V1 = (vertices[sur[sur.size() - 1]] - vertices[sur[sur.size() - 2]]).ToVector3();
+		V2 = (vertices[sur[0]] - vertices[sur[sur.size() - 1]]).ToVector3();
+		Np = Vector3::Cross(V2, V1);
+		vertice_vector[sur[sur.size() - 1]].Add(Np.GetX(), Np.GetY(), Np.GetZ());
 
-		h /= 6;
+		for (int i = 1; i < sur.size()-1; i++)
+		{
+			V1 = (vertices[sur[i]] - vertices[sur[i-1]]).ToVector3();
+			V2 = (vertices[sur[i+1]] - vertices[sur[i]]).ToVector3();
+			Np = Vector3::Cross(V2, V1);
+			vertice_vector[sur[i]].Add(Np.GetX(), Np.GetY(), Np.GetZ());
+		}
+		
 	}
 
-	return Vector4(h, s, l, 255);
+	for (int i = 0; i < vertices.size(); i++)
+	{
+		vertice_vector[i].Normalize();
+		//vertice_vector[i] =-1* vertice_vector[i];
+		//vertice_vector[i].Print();
+	}
+
 }
 

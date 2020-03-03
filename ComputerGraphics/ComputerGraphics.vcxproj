@@ -82,8 +82,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\zhemi\Documents\GitHub\computer-graphics\ComputerGraphics\glfw-3.3.bin.WIN32\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\zhemi\Documents\GitHub\computer-graphics\ComputerGraphics\glfw-3.3.bin.WIN32\lib-vc2019;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)/lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -167,6 +167,7 @@
     <ClCompile Include="Draw.cpp" />
     <ClCompile Include="EdgeTable.cpp" />
     <ClCompile Include="File.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="Matrix4.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ModelEdge.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="Debug.h" />
     <ClInclude Include="EdgeTable.h" />
     <ClInclude Include="File.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Matrix4.h" />
     <ClInclude Include="Model.h" />

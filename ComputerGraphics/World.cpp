@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cstdint>
 #include "World.h"
-#include "Camera.h"
 #include "Vector3.h"
 #include "Vector4.h"
 #include "Matrix4.h"
@@ -17,7 +16,6 @@ float ImageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT][4] = {};
 
 World::World()
 {
-	mainCamera = NULL;
 	InitZBuffer();
 }
 
@@ -32,6 +30,7 @@ void World::LoadModel(Model& model)
 	model.SetPosition(worldPosition);
 	this->Models.push_back(model);
 }
+
 void World::LoadModel(Model& model, Vector3& offset)
 {
 	Vector3 worldPosition = Vector3(offset);
@@ -46,26 +45,33 @@ void World::LoadCamera(Camera& camera)
 	Matrix4 m_localToWorld = Matrix4();
 	camera.LocalToWorld(m_localToWorld);
 	this->Cameras.push_back(camera);
-	if (mainCamera==NULL && this->Cameras.size()>0)
+	if (/*mainCamera==NULL &&*/ this->Cameras.size()>=0)
 	{
-		mainCamera = &Cameras[0];
+		mainCamera = Cameras[0];
 	}
+}
+
+void World::LoadLight(Light& light)
+{
+	this->Lights.push_back(light);
 }
 
 void World::InitWorld() {
 
 }
 
-void World::PreRun()
+void World::PreRun(int shadingType)
 {
 	//choose one to run
 	//NoBackFaceCulling();
 	BackFaceCulling();
+	InitVerticeVector();
 	ModelToView();
+	CalculateModelColor();
 	ViewToPrejection();
 	RegulateRenderModels();
 	SurfacesToEdgeTables();
-	CreateImage();
+	CreateImage(shadingType);
 	//HSLtoRGBColor();
 }
 
@@ -83,14 +89,13 @@ void World::Run()
 
 void World::SetCameraPosition(Vector3& position)
 {
-	mainCamera->SetPosition(position);
+	mainCamera.SetPosition(position);
 }
 
 Camera World::GetMainCamera()
 {
-	return *mainCamera;
+	return mainCamera;
 }
-
 
 void World::BackFaceCulling()
 {
@@ -100,10 +105,15 @@ void World::BackFaceCulling()
 	Surface newSurface;
 	std::vector<int> tempSurface;
 	std::vector<Vector3> tempVertices;
-	Vector3 CameraPosition = mainCamera->GetPosition();
+	Vector3 CameraPosition = mainCamera.GetPosition();
 	Vector3 V1, V2, Np, N;
+	Vector3 modelColor;
+	float k_d = 0;
 	for (auto& model : Models) {
 		newRenderModel = RenderModel();
+		modelColor = model.GetModelColor();
+		k_d = model.GetK_D();
+		newRenderModel.SetModelColor(modelColor,k_d);
 		tempVertices = model.GetVertices();
 		for (auto& v : tempVertices) {
 			newVertice = v.ToVector4();
@@ -134,8 +144,13 @@ void World::NoBackFaceCulling()
 	RenderModel newRenderModel;
 	Vector4 newVertice;
 	Surface newSurface;
+	Vector3 modelColor;
+	float k_d = 0;
 	for (auto& model : Models) {
 		newRenderModel = RenderModel();
+		modelColor = model.GetModelColor();
+		k_d = model.GetK_D();
+		newRenderModel.SetModelColor(modelColor,k_d);
 		for (auto& v : model.GetVertices()) {
 			newVertice = v.ToVector4();
 			newRenderModel.AddVertices(newVertice);
@@ -149,29 +164,44 @@ void World::NoBackFaceCulling()
 	}
 }
 
+void World::InitVerticeVector()
+{
+	for (auto & model : RenderModels)
+	{
+		model.InitVerticeVector();
+	}
+}
+
 void World::ModelToView()
 {
-	Matrix4 tempMat = mainCamera->GetMatView();
+	Matrix4 tempMat = mainCamera.GetMatView();
 	//std::cout << "Apply Matrix world to view" << std::endl;
 	//tempMat.Print();
+	
 	for (auto& model : RenderModels) {
 		model.LeftProduct(tempMat);
-		model.CalculateColor();
 		//model.PrintVertices();
 	}
-
 
 }
 
 void World::CalculateModelColor() {
+	
+	//Vector3 LightDirection = Vector3(0, 0, 10);
+	//Vector3 LightColor = Vector3(255, 255, 255);
+	Vector3 CameraFront = mainCamera.GetFront();
+	Vector3 modelColor;
+	float k_d = 0;
 	for (auto& model : RenderModels) {
-		model.CalculateColor();
+		k_d = model.GetK_D();
+		modelColor == model.GetModelColor();
+		model.CalculateColor(CameraFront, Lights, this->worldColor, this->k_a);
 	}
 }
 
 void World::ViewToPrejection()
 {
-	Matrix4 tempMat = mainCamera->GetMatPers();
+	Matrix4 tempMat = mainCamera.GetMatPers();
 	/*std::cout << "Apply Matrix view to prejection" << std::endl;
 	tempMat.Print();*/
 	for (auto& model : RenderModels) {
@@ -186,7 +216,6 @@ void World::RegulateRenderModels() {
 		model.RegulateModel();
 	}
 }
-
 
 void World::SurfacesToEdgeTables()
 {
@@ -212,39 +241,65 @@ bool compareEdges_X(const ModelEdge& edge1, const ModelEdge& edge2) {
 	return false;
 }
 
-int min_height = 0;
-int max_height = 0;
-int w_start = 0;
-int w_end = 0;
-Vector4 color_start;
-Vector4 color_end;
-float z_start = 0;
-float z_end = 0;
-Vector4 color_slope_here;
-float z_slope_here = 0;
-
-void World::CreateImage()
+void World::CreateImage(int shadingType)
 {
+	Vector3 CameraFront = mainCamera.GetFront();
+
+	Vector4 constant_color;
 	std::vector<ModelEdge> active_edge_table;
+	int min_height = 0;
+	int max_height = 0;
+	int w_start = 0;
+	int w_end = 0;
+	Vector4 color_start; //color for gouraud shading
+	Vector4 color_end;
+	Vector3 vector_start;
+	Vector3 vector_end;
+	float z_start = 0;
+	float z_end = 0;
+	Vector4 color_slope_here;
+	Vector3 vector_slope_here;
+	Vector4 color_vector;// color for phone shading
+	float z_slope_here = 0;
 	InitZBuffer();
 	InitImageBuffer();
+
 	auto update_active_edge_table = [&](int h) {
+		// sort active table
 		active_edge_table.erase(std::remove_if(active_edge_table.begin(), active_edge_table.end(), [&](const ModelEdge& model) {
 			return (int)model.Ymax <= h;
 			}), active_edge_table.end());
+
+		// update value
 		for (auto& edge : active_edge_table)
 		{
 			edge.Xmin = edge.Xmin + edge.slope;
-			edge.start_color->Set((*edge.start_color + *edge.color_slope).GetX(),
-				(*edge.start_color + *edge.color_slope).GetY(),
-				(*edge.start_color + *edge.color_slope).GetZ(),
-				(*edge.start_color + *edge.color_slope).GetW());
 			edge.start_z = edge.start_z + edge.z_slope;
+			if (shadingType == GOURAUD_SHADING)
+			{
+				edge.start_color.Add(edge.color_slope.GetX(),
+									 edge.color_slope.GetY(),
+									 edge.color_slope.GetZ(),
+									 edge.color_slope.GetW());
+			}
+			else if (shadingType == PHONG_SHADING)
+			{
+				edge.start_vector.Add(edge.vector_slope.GetX(),
+									  edge.vector_slope.GetY(), 
+									  edge.vector_slope.GetZ());
+			}
+
 		}
 	};
-	
-	for (auto& et :this->edgeTables)
+
+	Vector3 modelColor;
+	float k_d = 0;
+	int counter = 0;
+	//int breaker = 0;
+	for (auto& et : this->edgeTables)
 	{
+		
+		if (et.edge_list.size() == 0) continue;
 		min_height = et.edge_list.begin()->first;
 		for (auto& e : et.edge_list.rbegin()->second) {
 			if (e.Ymax > max_height) {
@@ -253,86 +308,142 @@ void World::CreateImage()
 		}
 		min_height = clamp(min_height, 0, Screen_Height);
 		max_height = clamp(max_height, 0, Screen_Height);
+
+		//for constant shading
+		constant_color = et.edge_list.begin()->second[0].start_color;
+
+		//for phong shading
+		modelColor = et.GetModelColor();
+		k_d =et.GetK_D();
+		counter++;
+
 		active_edge_table.clear();
 
 		for (auto& h = min_height; h < max_height; h++)
 		{
-			if (et.edge_list.count(h)==1)
+			//there are new edges in the edge list
+			if (et.edge_list.count(h) == 1)
 			{
 				for (auto& edge : et.edge_list[h])
 				{
-					//ModelEdge newModelEdge = ModelEdge((int)edge.height, edge.Ymax, edge.Xmin, edge.slope, *edge.start_color, *edge.color_slope, edge.start_z, edge.z_slope);
 					active_edge_table.push_back(edge);
 				}
 				update_active_edge_table(h);
 				std::sort(active_edge_table.begin(), active_edge_table.end(), compareEdges_X);
 			}
-			else
+			else// no new edges in the edge list
 			{
+				//just update
 				update_active_edge_table(h);
-				
+
 				std::sort(active_edge_table.begin(), active_edge_table.end(), compareEdges_X);
 			}
-			if (active_edge_table.size()==0)
+			
+			// in cased active edge table is null 
+			if (active_edge_table.size() == 0)
 			{
 				continue;
 			}
-			for (auto i = 0; i < active_edge_table.size()-1; i+=2)
+
+			for (auto i = 0; i < active_edge_table.size() - 1; i += 2)
 			{
-				w_start =clamp(active_edge_table[i].Xmin,0, Screen_Weight);
-				w_end = clamp(active_edge_table[i + 1].Xmin,0, Screen_Weight);
-				color_start = *active_edge_table[i].start_color;
-				color_end = *active_edge_table[i + 1].start_color;
+				w_start = (int)clamp(active_edge_table[i].Xmin, 0, Screen_Weight);
+				w_end = (int)clamp(active_edge_table[i + 1].Xmin, 0, Screen_Weight);
+				if (w_start == w_end) continue;
+
 				z_start = active_edge_table[i].start_z;
 				z_end = active_edge_table[i + 1].start_z;
-				if (w_start == w_end) continue;
-				color_slope_here = (color_start - color_end) / (const float)(w_start - w_end);
 				z_slope_here = (z_start - z_end) / (w_start - w_end);
-				for (int w = w_start; w < w_end; w++)
-				{
-					color_start = color_start + color_slope_here;
-					z_start = z_start + z_slope_here;
-					if (z_start<ZBuffer[h][w])
-					{
-						/*color_start.GetX();
-						color_start.GetY();
-						color_start.GetZ();
-						color_start.GetW();*/
-						//Debug::Log(h, w);
-						ImageBuffer[h][w][0] = color_start.GetX();
-						ImageBuffer[h][w][1] = color_start.GetY();
-						ImageBuffer[h][w][2] = color_start.GetZ();
-						ImageBuffer[h][w][3] = color_start.GetW();
 
-						ZBuffer[h][w] = z_start;
-						//Debug::Log("now zbuffer[h][w] is", ZBuffer[h][w]);
+				if (shadingType == CONSTANT_SHADING)
+				{
+				
+					for (int w = w_start; w < w_end; w++)
+					{
+						z_start = z_start + z_slope_here;
+						if (z_start < ZBuffer[h][w])
+						{
+
+							ImageBuffer[h][w][0] = constant_color.GetX() / 255.f;
+							ImageBuffer[h][w][1] = constant_color.GetY() / 255.f;
+							ImageBuffer[h][w][2] = constant_color.GetZ() / 255.f;
+							ImageBuffer[h][w][3] = constant_color.GetW();
+
+							ZBuffer[h][w] = z_start;
+							//Debug::Log("now zbuffer[h][w] is", ZBuffer[h][w]);
+							/*breaker++;
+							if (breaker >5)
+							{
+								break;
+
+							}*/
+
+						}
+					}
+				}
+				if (shadingType == GOURAUD_SHADING)
+				{
+					color_start = active_edge_table[i].start_color;
+					color_end = active_edge_table[i + 1].start_color;
+					color_slope_here = (color_start - color_end) / (const float)(w_start - w_end);
+
+					//test
+					//breaker = 0;
+					for (int w = w_start; w < w_end; w++)
+					{
+						color_start = color_start + color_slope_here;
+						z_start = z_start + z_slope_here;
+						if (z_start < ZBuffer[h][w])
+						{
+							/*color_start.GetX();
+							color_start.GetY();
+							color_start.GetZ();
+							color_start.GetW();*/
+							//Debug::Log(h, w);
+							ImageBuffer[h][w][0] = color_start.GetX() / 255.f;
+							ImageBuffer[h][w][1] = color_start.GetY() / 255.f;
+							ImageBuffer[h][w][2] = color_start.GetZ() / 255.f;
+							ImageBuffer[h][w][3] = color_start.GetW();
+
+							ZBuffer[h][w] = z_start;
+							//Debug::Log("now zbuffer[h][w] is", ZBuffer[h][w]);
+							/*breaker++;
+							if (breaker >5)
+							{
+								break;
+
+							}*/
+
+						}
+					}
+				}
+				else if (shadingType == PHONG_SHADING)
+				{
+					vector_start = active_edge_table[i].start_vector;
+					vector_end = active_edge_table[i + 1].start_vector;
+					vector_slope_here = (vector_start - vector_end) / (const float)(w_start - w_end);
+
+					for (int w = w_start; w < w_end; w++)
+					{
+						vector_start = vector_start + vector_slope_here;
+						z_start = z_start + z_slope_here;
+						if (z_start < ZBuffer[h][w])
+						{
+							color_vector = RenderModel::CalculateColor(vector_start, CameraFront, Lights,worldColor,modelColor, k_a, k_d);
+							ImageBuffer[h][w][0] = color_vector.GetX() / 255.f;
+							ImageBuffer[h][w][1] = color_vector.GetY() / 255.f;
+							ImageBuffer[h][w][2] = color_vector.GetZ() / 255.f;
+							ImageBuffer[h][w][3] = color_vector.GetW();
+
+							ZBuffer[h][w] = z_start;
+							
+						}
 					}
 				}
 			}
 		}
-
 	}
-	//Debug::Log("finish print");
 }
-
-//void World::HSLtoRGBColor() {
-//	Vector4 RGBcolor;
-//
-//	for (int i = 0; i < SCREEN_HEIGHT; i++)
-//	{
-//		for (int j = 0; j < SCREEN_WEIGHT; j++)
-//		{
-//			//glPointSize(2.0);
-//			RGBcolor = hslToRgb(ImageBuffer[i][j].GetX(), ImageBuffer[i][j].GetY(), ImageBuffer[i][j].GetZ());
-//			ImageBuffer[i][j].Set(RGBcolor.GetX() / 255.f, RGBcolor.GetY() / 255.f, RGBcolor.GetZ() / 255.f,255);
-//			/*if (RGBcolor.GetX()!=0)
-//			{
-//				Debug::Log("here");
-//				ImageBuffer[i][j].Print();
-//			}*/
-//		}
-//	}
-//}
 
 void World::InitZBuffer()
 {
@@ -358,44 +469,4 @@ void World::InitImageBuffer()
 		}
 	}
 }
-
-
-/**
- * Converts an HSL color value to RGB. Conversion formula
- * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
- * Assumes h, s, and l are contained in the set [0, 1] and
- * returns r, g, and b in the set [0, 255].
- *
- * @param   {number}  h       The hue
- * @param   {number}  s       The saturation
- * @param   {number}  l       The lightness
- * @return  {Array}           The RGB representation
- */
-Vector4 World::hslToRgb(float h, float s, float l) {
-	Vector4 rgb;
-	float r, g, b;
-
-	if (s == 0) {
-		r = g = b = l; // achromatic
-	}
-	else {
-		auto hue2rgb = [](float p, float q, float t) {
-			if (t < 0) t += 1;
-			if (t > 1) t -= 1;
-			if (t < 1 / 6) return p + (q - p) * 6 * t;
-			if (t < 1 / 2) return q;
-			if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-			return p;
-		};
-
-		float q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-		float p = 2 * l - q;
-		r = hue2rgb(p, q, h + 1 / 3);
-		g = hue2rgb(p, q, h);
-		b = hue2rgb(p, q, h - 1 / 3);
-	}
-
-	return Vector4(round(r * 255), round(g * 255), round(b * 255), 255);
-}
-
 

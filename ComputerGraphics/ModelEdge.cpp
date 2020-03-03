@@ -1,16 +1,17 @@
 #include "ModelEdge.h"
-#include "Vector4.h"
 #include <iostream>
 #include <iomanip>
 
-ModelEdge::ModelEdge(int height, float ymax, float xmin, float slope, Vector4& start_color, Vector4& color_slope, float start_z, float z_slope)
+ModelEdge::ModelEdge(int height, float ymax, float xmin, float slope, Vector4& start_color, Vector4& color_slope,Vector3& start_vector, Vector3& vector_slope, float start_z, float z_slope)
 {
 	this->height = height;
 	this->Ymax = ymax;
 	this->Xmin = xmin;
 	this->slope = slope;
-	this->start_color = new Vector4(start_color);
-	this->color_slope = new Vector4(color_slope);
+	this->start_color = Vector4(start_color);
+	this->color_slope = Vector4(color_slope);
+	this->start_vector = Vector3(start_vector);
+	this->vector_slope = Vector3(vector_slope);
 	this->start_z = start_z;
 	this->z_slope = z_slope;
 }

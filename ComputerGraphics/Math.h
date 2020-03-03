@@ -4,6 +4,12 @@
 #define MATH_H
 #define SCREEN_WEIGHT 640
 #define SCREEN_HEIGHT 480
+
+//shading types
+#define CONSTANT_SHADING 0
+#define GOURAUD_SHADING 1
+#define PHONG_SHADING 2
+
 #include <cmath>
 #include "Debug.h"
 
@@ -17,10 +23,11 @@ inline float clamp(float  number, float min, float max) {
 		number = min;
 	}
 	if (number > max) {
-		
 		//Debug::Log("clamping max", number);
 		number = max;
 	}
 	return number;
 }
+
+
 #endif /* MATH_H */

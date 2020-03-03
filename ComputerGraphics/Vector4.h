@@ -19,6 +19,13 @@
 		inline float GetZ(void) { return vec[2]; }
 		inline float GetW(void) { return vec[3]; }
 
+		inline void Add(float x, float y, float z, float w) {
+			vec[0] += x;
+			vec[1] += y;
+			vec[2] += z;
+			vec[3] += w;
+		}
+
 		inline void Set(float x, float y, float z, float w) {
 			vec[0] = x;
 			vec[1] = y;
