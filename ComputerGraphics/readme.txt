@@ -3,6 +3,11 @@ This project is build with glfw3.3 and opencv.
 To load model successfully, the direction of model file should not contain any space
 input E to start preview mode
 input d to stop preview mode
+input r to start light mode
+input f to stop light mode
+input w to move forward camera
+input s to move backward camera
+input a to stop move camera
 right click mouse to drag model 
 
 ## Project structure 
@@ -23,6 +28,7 @@ Model: Model to load, contains vertex and surface information
 RenderModel: Model use to render, generate from original model to calculate transformation
 Surface: model surface information
 EdgeTable: edge talble structure 
+Light: light of the world
 ModelEdge: edges in edge table
 
 World: world of this system

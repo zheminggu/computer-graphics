@@ -51,3 +51,4 @@ void Light::SetModelLightAttribute(float k_s, int n)
 	this->k_s = k_s;
 	this->n = n;
 }
+

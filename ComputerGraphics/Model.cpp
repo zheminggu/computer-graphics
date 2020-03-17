@@ -137,6 +137,16 @@ void Model::LocalToWorld()
 	}
 }
 
+void Model::OnUpdate()
+{
+	//if (rotate)
+	//{
+	//	for (auto& v : vertices) {
+	//		v.RotateY(degree);
+	//	}
+	//}
+}
+
 
 
 

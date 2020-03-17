@@ -6,6 +6,7 @@
 #include <string>
 #include "Vector3.h"
 #include "Vector4.h"
+#include "Math.h"
 
 Vector3::Vector3()
 {
@@ -112,6 +113,32 @@ Vector3 Vector3::Cross(const Vector3& vector) const
 	return Vector3(vec[1] * vector.vec[2] - vec[2] * vector.vec[1], vec[2] * vector.vec[0] - vec[0] * vector.vec[2], vec[0] * vector.vec[1] - vec[1] * vector.vec[0]);
 }
 
+void Vector3::RotateX(float degree)
+{
+	if (degree == 0.0)	return;
+	float sinAngle = (float)sin(PI * degree / 180.f);
+	float cosAngle = (float)cos(PI * degree / 180.f);
+	vec[1] = vec[1] * cosAngle - vec[2] * sinAngle;
+	vec[2] = vec[1] * sinAngle + vec[2] * cosAngle;
+}
+
+void Vector3::RotateY(float degree)
+{
+	if (degree == 0.0)	return;
+	float sinAngle = (float)sin(PI * degree / 180.f);
+	float cosAngle = (float)cos(PI * degree / 180.f);
+	vec[0] = vec[0] * cosAngle + vec[2] * sinAngle;
+	vec[2] = -vec[0] * sinAngle + vec[2] * cosAngle;
+}
+
+void Vector3::RotateZ(float degree)
+{
+	if (degree == 0.0)	return;
+	float sinAngle = (float)sin(PI * degree / 180.f);
+	float cosAngle = (float)cos(PI * degree / 180.f);
+	vec[0] = vec[0] * cosAngle - vec[1] * sinAngle;
+	vec[1] = vec[0] * sinAngle + vec[1] * cosAngle;
+}
 
 
 Vector3 Vector3::Normalize(Vector3& vector)

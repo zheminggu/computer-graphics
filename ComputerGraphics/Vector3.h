@@ -47,7 +47,10 @@ public:
 	float Length() const;
 	Vector3 Normalize();
 	Vector3 Cross(const Vector3& vector) const;
-	
+	void RotateX(float degree);
+	void RotateY(float degree);
+	void RotateZ(float degree);
+
 	static Vector3 Normalize(Vector3& vector);
 	static Vector3 Cross(const Vector3& a, const Vector3& b);
 		

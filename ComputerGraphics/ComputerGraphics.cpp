@@ -25,6 +25,7 @@ bool preview_mode = false;
 bool lbutton_down = false;
 bool scale_big = false;
 bool scale_small = false;
+bool change_light_direction = false;
 double xpos = 0, ypos = 0;
 double lastPosx = 0, lastPosy = 0;
 double current_cameraPositionx=0, current_cameraPositiony=0;
@@ -68,7 +69,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			scale_small = false;
 			scale_big = false;
 			break;
-
+		case GLFW_KEY_R:
+			change_light_direction = true;
+			break;
+		case GLFW_KEY_F:
+			change_light_direction = false;
+			break;
 		default:
 			break;
 		}
@@ -94,26 +100,28 @@ static void mouse_callback(GLFWwindow* window, int button, int action, int mods)
 
 int main(void)
 {
-	/*std::cout << "please input file path" << std::endl;
+	std::cout << "please input file path" << std::endl;
 	std::string file_path;
-	std::cin >> file_path;*/
-	float distance = 8;
+	std::cin >> file_path;
+	float distance = 15;
 	bool show_FPS = false;
 	int modelNumber = 6;
 #pragma region Init World
 	world.SetWorldColor(Vector3(255, 255, 255), 0.1f);
 
 	//init the world
+
 	auto file = File();
-	auto model = file.OpenFile(/*file_path*/);
 	Vector3 modelColor;
+
+	auto model = file.OpenFile(file_path);
 	//model.SetModelColor(modelColor, 1.f);
 	//model.PrintModelInfo();
 	//world.LoadModel(model);
 
 	for (int i = 0; i < modelNumber; i++)
 	{
-		Vector3 offset = Vector3(cos(2*PI / modelNumber * i) * 5, 0, sin(2 * PI / modelNumber * i) * 5);
+		Vector3 offset = Vector3(cos(2*PI / modelNumber * i) * 5, 1 , sin(2 * PI / modelNumber * i) * 5);
 		modelColor = Vector3(std::rand()%255, std::rand() % 255, std::rand() % 255);
 		model.SetModelColor(modelColor, 1.f);
 		world.LoadModel(model, offset);
@@ -176,7 +184,7 @@ int main(void)
 		if (preview_mode) {
 			//std::cout << "x: " <<x << std::endl;
 			x = x + 0.5 * delta_time;
-			Vector3 newCameraPosition = Vector3(distance * sin(x), distance * cos(x), distance * cos(x));
+			Vector3 newCameraPosition = Vector3(distance * sin(x),0/* distance * cos(x)*/, distance * cos(x));
 			world.SetCameraPosition(newCameraPosition);
 			world.PreRun(shadingType);
 		}
@@ -220,6 +228,12 @@ int main(void)
 		{
 			world.PreRun(shadingType);
 			changeShadingType = false;
+		}
+		if (change_light_direction) {
+			x = x + 0.5 * delta_time;
+			Vector3 newLightPosition = Vector3(distance * sin(x), distance * cos(x), distance * cos(x));
+			world.ChangeLightDirection(newLightPosition);
+			world.PreRun(shadingType);
 		}
 		world.Run();
 		previous = now;

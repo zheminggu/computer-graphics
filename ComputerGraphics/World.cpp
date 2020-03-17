@@ -62,6 +62,7 @@ void World::InitWorld() {
 
 void World::PreRun(int shadingType)
 {
+
 	//choose one to run
 	//NoBackFaceCulling();
 	BackFaceCulling();
@@ -79,6 +80,9 @@ void World::PreRun(int shadingType)
 
 void World::Run()
 {
+	for (auto model : Models) {
+		model.OnUpdate();
+	}
 	/*for (auto& model : RenderModels) {
 		model.DrawModel();
 	}*/
@@ -95,6 +99,14 @@ void World::SetCameraPosition(Vector3& position)
 Camera World::GetMainCamera()
 {
 	return mainCamera;
+}
+
+void World::ChangeLightDirection(Vector3& light_dir)
+{
+	for (auto& light :Lights)
+	{
+		light.SetLightDirection(light_dir);
+	}
 }
 
 void World::BackFaceCulling()

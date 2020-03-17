@@ -13,6 +13,10 @@ class Model
 {
 
 public:
+	Model() {
+		rotate = false;
+		degree = 0;
+	}
 	void AddVertices(Vector3& point);
 	void AddSurfaces(Surface& surface);
 	void PrintModelInfo();
@@ -32,6 +36,7 @@ public:
 	inline void SetModelColor(Vector3& modelColor, float k_d) { this->modelColor = Vector3(modelColor); this->k_d = k_d; }
 	inline Vector3 GetModelColor() { return this->modelColor; }
 	inline float GetK_D() { return k_d; }
+	void OnUpdate();
 private:
 	Vector3 worldOffset;
 	std::vector<Vector3> vertices;
@@ -40,6 +45,10 @@ private:
 	int num_surfaces;
 	Vector3 modelColor;
 	float k_d;
+	
+public:
+	bool rotate;
+	float degree;
 };
 
 #endif

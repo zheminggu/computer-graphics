@@ -10,7 +10,7 @@
 Camera::Camera()
 {
 	//set these vector need change mat view
-	localPosition =Vector3(0, 0, 10);
+	localPosition =Vector3(0, 2, 10);
 	worldPosition = Vector3(localPosition);
 	upVector = Vector3(0, 1, 0);
 	P_ref = Vector3(0, 0, 0);

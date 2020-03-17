@@ -32,7 +32,7 @@ public:
 	void Run();
 	void SetCameraPosition(Vector3& position);
 	Camera GetMainCamera();
-
+	void ChangeLightDirection(Vector3& light_dir);
 	inline void SetWorldColor(Vector3 color, float k_a) { this->worldColor = Vector3(color); this->k_a = k_a; }
 private:
 	void BackFaceCulling();
