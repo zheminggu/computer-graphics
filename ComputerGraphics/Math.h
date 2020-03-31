@@ -29,5 +29,8 @@ inline float clamp(float  number, float min, float max) {
 	return number;
 }
 
+inline float lerp(float start, float end, float percent) {
+	return start + percent * (end - start);
+}
 
 #endif /* MATH_H */

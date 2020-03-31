@@ -9,6 +9,7 @@
 #include "Matrix4.h"
 #include "Draw.h"
 #include "Debug.h"
+#include "Texture.h"
 
 float ZBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT] = {};
 float ImageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT][4] = {};
@@ -231,15 +232,12 @@ void World::RegulateRenderModels() {
 
 void World::SurfacesToEdgeTables()
 {
-	this->edgeTables.clear();
+	this->modelEdgeTables.clear();
 	std::vector<EdgeTable> edge_table_model;
 	for (auto& model : RenderModels) {
 
 		edge_table_model = model.CreateEdgeTable();
-		for (auto& et: edge_table_model)
-		{
-			edgeTables.push_back(et);
-		}
+		modelEdgeTables.push_back(edge_table_model);
 	}
 	//Debug::Log("over surface to edge Tables");
 	//for (auto et : edgeTables)
@@ -253,6 +251,8 @@ bool compareEdges_X(const ModelEdge& edge1, const ModelEdge& edge2) {
 	return false;
 }
 
+Texture* modelTexture;
+Texture* modelNormalTexture;
 void World::CreateImage(int shadingType)
 {
 	Vector3 CameraFront = mainCamera.GetFront();
@@ -304,157 +304,177 @@ void World::CreateImage(int shadingType)
 		}
 	};
 
+	Vector3 modelVector;
 	Vector3 modelColor;
 	float k_d = 0;
 	int counter = 0;
 	//int breaker = 0;
-	for (auto& et : this->edgeTables)
-	{
-		
-		if (et.edge_list.size() == 0) continue;
-		min_height = et.edge_list.begin()->first;
-		for (auto& e : et.edge_list.rbegin()->second) {
-			if (e.Ymax > max_height) {
-				max_height = (int)e.Ymax;
-			}
-		}
-		min_height = clamp(min_height, 0, Screen_Height);
-		max_height = clamp(max_height, 0, Screen_Height);
-
-		//for constant shading
-		constant_color = et.edge_list.begin()->second[0].start_color;
-
-		//for phong shading
-		modelColor = et.GetModelColor();
-		k_d =et.GetK_D();
+	for (auto& edgeTables : this->modelEdgeTables) {
+		modelTexture = Models[counter].GetTexture();
+		modelNormalTexture = Models[counter].GetNormalTexture();
 		counter++;
-
-		active_edge_table.clear();
-
-		for (auto& h = min_height; h < max_height; h++)
+		for (auto& et : edgeTables)
 		{
-			//there are new edges in the edge list
-			if (et.edge_list.count(h) == 1)
-			{
-				for (auto& edge : et.edge_list[h])
-				{
-					active_edge_table.push_back(edge);
+			if (et.edge_list.size() == 0) continue;
+			min_height = et.edge_list.begin()->first;
+			for (auto& e : et.edge_list.rbegin()->second) {
+				if (e.Ymax > max_height) {
+					max_height = (int)e.Ymax;
 				}
-				update_active_edge_table(h);
-				std::sort(active_edge_table.begin(), active_edge_table.end(), compareEdges_X);
 			}
-			else// no new edges in the edge list
+			min_height = clamp(min_height, 0, Screen_Height);
+			max_height = clamp(max_height, 0, Screen_Height);
+
+			//for constant shading
+			constant_color = et.edge_list.begin()->second[0].start_color;
+
+			//for phong shading
+			modelColor = et.GetModelColor();
+			k_d = et.GetK_D();
+
+
+			active_edge_table.clear();
+
+			for (auto& h = min_height; h < max_height; h++)
 			{
-				//just update
-				update_active_edge_table(h);
-
-				std::sort(active_edge_table.begin(), active_edge_table.end(), compareEdges_X);
-			}
-			
-			// in cased active edge table is null 
-			if (active_edge_table.size() == 0)
-			{
-				continue;
-			}
-
-			for (auto i = 0; i < active_edge_table.size() - 1; i += 2)
-			{
-				w_start = (int)clamp(active_edge_table[i].Xmin, 0, Screen_Weight);
-				w_end = (int)clamp(active_edge_table[i + 1].Xmin, 0, Screen_Weight);
-				if (w_start == w_end) continue;
-
-				z_start = active_edge_table[i].start_z;
-				z_end = active_edge_table[i + 1].start_z;
-				z_slope_here = (z_start - z_end) / (w_start - w_end);
-
-				if (shadingType == CONSTANT_SHADING)
+				//there are new edges in the edge list
+				if (et.edge_list.count(h) == 1)
 				{
-				
-					for (int w = w_start; w < w_end; w++)
+					for (auto& edge : et.edge_list[h])
 					{
-						z_start = z_start + z_slope_here;
-						if (z_start < ZBuffer[h][w])
+						active_edge_table.push_back(edge);
+					}
+					update_active_edge_table(h);
+					std::sort(active_edge_table.begin(), active_edge_table.end(), compareEdges_X);
+				}
+				else// no new edges in the edge list
+				{
+					//just update
+					update_active_edge_table(h);
+
+					std::sort(active_edge_table.begin(), active_edge_table.end(), compareEdges_X);
+				}
+
+				// in cased active edge table is null 
+				if (active_edge_table.size() == 0)
+				{
+					continue;
+				}
+
+				for (auto i = 0; i < active_edge_table.size() - 1; i += 2)
+				{
+					w_start = (int)clamp(active_edge_table[i].Xmin, 0, Screen_Weight);
+					w_end = (int)clamp(active_edge_table[i + 1].Xmin, 0, Screen_Weight);
+					if (w_start == w_end) continue;
+
+					z_start = active_edge_table[i].start_z;
+					z_end = active_edge_table[i + 1].start_z;
+					z_slope_here = (z_start - z_end) / (w_start - w_end);
+
+					if (shadingType == CONSTANT_SHADING)
+					{
+
+						for (int w = w_start; w < w_end; w++)
 						{
-
-							ImageBuffer[h][w][0] = constant_color.GetX() / 255.f;
-							ImageBuffer[h][w][1] = constant_color.GetY() / 255.f;
-							ImageBuffer[h][w][2] = constant_color.GetZ() / 255.f;
-							ImageBuffer[h][w][3] = constant_color.GetW();
-
-							ZBuffer[h][w] = z_start;
-							//Debug::Log("now zbuffer[h][w] is", ZBuffer[h][w]);
-							/*breaker++;
-							if (breaker >5)
+							z_start = z_start + z_slope_here;
+							if (z_start < ZBuffer[h][w])
 							{
-								break;
 
-							}*/
+								ImageBuffer[h][w][0] = constant_color.GetX() / 255.f;
+								ImageBuffer[h][w][1] = constant_color.GetY() / 255.f;
+								ImageBuffer[h][w][2] = constant_color.GetZ() / 255.f;
+								ImageBuffer[h][w][3] = constant_color.GetW();
 
+								ZBuffer[h][w] = z_start;
+								//Debug::Log("now zbuffer[h][w] is", ZBuffer[h][w]);
+								/*breaker++;
+								if (breaker >5)
+								{
+									break;
+
+								}*/
+
+							}
 						}
 					}
-				}
-				if (shadingType == GOURAUD_SHADING)
-				{
-					color_start = active_edge_table[i].start_color;
-					color_end = active_edge_table[i + 1].start_color;
-					color_slope_here = (color_start - color_end) / (const float)(w_start - w_end);
-
-					//test
-					//breaker = 0;
-					for (int w = w_start; w < w_end; w++)
+					if (shadingType == GOURAUD_SHADING)
 					{
-						color_start = color_start + color_slope_here;
-						z_start = z_start + z_slope_here;
-						if (z_start < ZBuffer[h][w])
+						color_start = active_edge_table[i].start_color;
+						color_end = active_edge_table[i + 1].start_color;
+						color_slope_here = (color_start - color_end) / (const float)(w_start - w_end);
+
+						//test
+						//breaker = 0;
+						for (int w = w_start; w < w_end; w++)
 						{
-							/*color_start.GetX();
-							color_start.GetY();
-							color_start.GetZ();
-							color_start.GetW();*/
-							//Debug::Log(h, w);
-							ImageBuffer[h][w][0] = color_start.GetX() / 255.f;
-							ImageBuffer[h][w][1] = color_start.GetY() / 255.f;
-							ImageBuffer[h][w][2] = color_start.GetZ() / 255.f;
-							ImageBuffer[h][w][3] = color_start.GetW();
-
-							ZBuffer[h][w] = z_start;
-							//Debug::Log("now zbuffer[h][w] is", ZBuffer[h][w]);
-							/*breaker++;
-							if (breaker >5)
+							color_start = color_start + color_slope_here;
+							z_start = z_start + z_slope_here;
+							if (z_start < ZBuffer[h][w])
 							{
-								break;
+								/*color_start.GetX();
+								color_start.GetY();
+								color_start.GetZ();
+								color_start.GetW();*/
+								//Debug::Log(h, w);
+								ImageBuffer[h][w][0] = color_start.GetX() / 255.f;
+								ImageBuffer[h][w][1] = color_start.GetY() / 255.f;
+								ImageBuffer[h][w][2] = color_start.GetZ() / 255.f;
+								ImageBuffer[h][w][3] = color_start.GetW();
 
-							}*/
+								ZBuffer[h][w] = z_start;
+								//Debug::Log("now zbuffer[h][w] is", ZBuffer[h][w]);
+								/*breaker++;
+								if (breaker >5)
+								{
+									break;
 
+								}*/
+
+							}
 						}
 					}
-				}
-				else if (shadingType == PHONG_SHADING)
-				{
-					vector_start = active_edge_table[i].start_vector;
-					vector_end = active_edge_table[i + 1].start_vector;
-					vector_slope_here = (vector_start - vector_end) / (const float)(w_start - w_end);
-
-					for (int w = w_start; w < w_end; w++)
+					else if (shadingType == PHONG_SHADING)
 					{
-						vector_start = vector_start + vector_slope_here;
-						z_start = z_start + z_slope_here;
-						if (z_start < ZBuffer[h][w])
-						{
-							color_vector = RenderModel::CalculateColor(vector_start, CameraFront, Lights,worldColor,modelColor, k_a, k_d);
-							ImageBuffer[h][w][0] = color_vector.GetX() / 255.f;
-							ImageBuffer[h][w][1] = color_vector.GetY() / 255.f;
-							ImageBuffer[h][w][2] = color_vector.GetZ() / 255.f;
-							ImageBuffer[h][w][3] = color_vector.GetW();
+						vector_start = active_edge_table[i].start_vector;
+						vector_end = active_edge_table[i + 1].start_vector;
+						vector_slope_here = (vector_start - vector_end) / (const float)(w_start - w_end);
 
-							ZBuffer[h][w] = z_start;
-							
+						for (int w = w_start; w < w_end; w++)
+						{
+							vector_start = vector_start + vector_slope_here;
+							z_start = z_start + z_slope_here;
+							if (z_start < ZBuffer[h][w])
+							{
+								if (modelTexture!=NULL)
+								{
+									modelColor = modelTexture->GetColor(vector_start);
+								}
+								if (modelNormalTexture!= NULL)
+								{
+									modelVector = modelNormalTexture->GetNormal(vector_start);
+									color_vector = RenderModel::CalculateColor(modelVector, CameraFront, Lights, worldColor, modelColor, k_a, k_d);
+
+								}
+								else
+								{
+									color_vector = RenderModel::CalculateColor(vector_start, CameraFront, Lights, worldColor, modelColor, k_a, k_d);
+								}
+
+								ImageBuffer[h][w][0] = color_vector.GetX() / 255.f;
+								ImageBuffer[h][w][1] = color_vector.GetY() / 255.f;
+								ImageBuffer[h][w][2] = color_vector.GetZ() / 255.f;
+								ImageBuffer[h][w][3] = color_vector.GetW();
+
+								ZBuffer[h][w] = z_start;
+
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+	
 }
 
 void World::InitZBuffer()

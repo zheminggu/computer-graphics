@@ -5,9 +5,10 @@
 
 #include "Surface.h"
 #include "Vector3.h"
+#include "Texture.h"
 #include <vector>
 class Matrix4;
-
+class Texture;
 
 class Model
 {
@@ -19,6 +20,8 @@ public:
 	}
 	void AddVertices(Vector3& point);
 	void AddSurfaces(Surface& surface);
+	void AddTexture(Texture* texture); 
+	void AddNormalTexture(Texture* texture);
 	void PrintModelInfo();
 	void PrintVertices();
 	void PrintVertices(int number);
@@ -36,6 +39,9 @@ public:
 	inline void SetModelColor(Vector3& modelColor, float k_d) { this->modelColor = Vector3(modelColor); this->k_d = k_d; }
 	inline Vector3 GetModelColor() { return this->modelColor; }
 	inline float GetK_D() { return k_d; }
+	inline Texture* GetTexture() { return  this->texture; }
+	inline Texture* GetNormalTexture() { return  this->normalTexture; }
+	inline void SetTexture(Texture *texture) { this->texture = texture; }
 	void OnUpdate();
 private:
 	Vector3 worldOffset;
@@ -45,10 +51,12 @@ private:
 	int num_surfaces;
 	Vector3 modelColor;
 	float k_d;
-	
+	Texture* texture;
+	Texture* normalTexture;
 public:
 	bool rotate;
 	float degree;
+	
 };
 
 #endif

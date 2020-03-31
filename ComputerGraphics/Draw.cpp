@@ -83,3 +83,18 @@ void Draw::DrawPoints(float imageBuffer[SCREEN_HEIGHT][SCREEN_WEIGHT][4]) {
 	finish_a_draw = true;*/
 }
 
+void Draw::DrawPoints(int image[256][256][3])
+{
+	glBegin(GL_POINTS);
+	for (int i = 0; i < 256; i++)
+	{
+		for (int j = 0; j < 256; j++)
+		{
+			//glPointSize(2.0);
+			glColor3fv((const float *)image[i][j]);
+			glVertex2f((j - 320) / 320.f, (i - 240) / 240.f);
+		}
+	}
+	glEnd();
+}
+

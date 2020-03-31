@@ -22,6 +22,12 @@ public:
 		vec[2] += z;
 	}
 
+	inline void Mul(float x, float y, float z) {
+		vec[0] *= x;
+		vec[1] *= y;
+		vec[2] *= z;
+	}
+
 	inline void Set(float x, float y, float z) {
 		vec[0] = x;
 		vec[1] = y;

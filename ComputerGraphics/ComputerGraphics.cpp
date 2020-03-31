@@ -18,6 +18,7 @@
 #include "Camera.h"
 #include "Vector3.h"
 #include "Math.h"
+#include "Texture.h"
 //#include "glfw-3.3.bin.WIN32/include/GLFW/glfw3.h"
 
 World world = World();
@@ -100,33 +101,90 @@ static void mouse_callback(GLFWwindow* window, int button, int action, int mods)
 
 int main(void)
 {
+	Texture* n_tex = new Texture();
+	Texture* n_ntex = new Texture();
 	std::cout << "please input file path" << std::endl;
 	std::string file_path;
 	std::cin >> file_path;
+
 	float distance = 15;
 	bool show_FPS = false;
 	int modelNumber = 6;
 #pragma region Init World
 	world.SetWorldColor(Vector3(255, 255, 255), 0.1f);
-
 	//init the world
 
+#pragma region Load Models
 	auto file = File();
 	Vector3 modelColor;
-
 	auto model = file.OpenFile(file_path);
-	//model.SetModelColor(modelColor, 1.f);
-	//model.PrintModelInfo();
-	//world.LoadModel(model);
 
-	for (int i = 0; i < modelNumber; i++)
-	{
-		Vector3 offset = Vector3(cos(2*PI / modelNumber * i) * 5, 1 , sin(2 * PI / modelNumber * i) * 5);
-		modelColor = Vector3(std::rand()%255, std::rand() % 255, std::rand() % 255);
-		model.SetModelColor(modelColor, 1.f);
-		world.LoadModel(model, offset);
-	}
-	
+	Vector3 offset = Vector3(cos(2 * PI / modelNumber * 0) * 5, 0, sin(2 * PI / modelNumber * 0) * 5);
+	modelColor = Vector3(std::rand() % 255, std::rand() % 255, std::rand() % 255);
+	model.SetModelColor(modelColor, 1.f);
+	n_tex->OpenTexture("Data/Textures/Pebbles_018_basecolor.jpg");
+	n_ntex->OpenTexture("Data/Textures/Pebbles_018_normal.jpg");
+	model.AddTexture(n_tex);
+	model.AddNormalTexture(n_ntex);
+	world.LoadModel(model, offset);
+
+	offset = Vector3(cos(2 * PI / modelNumber * 1) * 5, 0, sin(2 * PI / modelNumber * 1) * 5);
+	modelColor = Vector3(std::rand() % 255, std::rand() % 255, std::rand() % 255);
+	model.SetModelColor(modelColor, 1.f);
+	n_tex = new Texture;
+	n_ntex = new Texture;
+	n_tex->OpenTexture("Data/Textures/Metal_Plate_Sci-Fi_001_basecolor.jpg");
+	n_ntex->OpenTexture("Data/Textures/Metal_Plate_Sci-Fi_001_normal.jpg");
+	model.AddTexture(n_tex);
+	model.AddNormalTexture(n_ntex);
+	world.LoadModel(model, offset);
+
+	offset = Vector3(cos(2 * PI / modelNumber * 2) * 5, 0, sin(2 * PI / modelNumber * 2) * 5);
+	modelColor = Vector3(std::rand() % 255, std::rand() % 255, std::rand() % 255);
+	model.SetModelColor(modelColor, 1.f);
+	n_tex = new Texture;
+	n_ntex = new Texture;
+	n_tex->OpenTexture("Data/Textures/Pumpkin_001_basecolor.jpg");
+	n_ntex->OpenTexture("Data/Textures/Pumpkin_001_normal.jpg");
+	model.AddTexture(n_tex);
+	model.AddNormalTexture(n_ntex);
+	world.LoadModel(model, offset);
+
+	offset = Vector3(cos(2 * PI / modelNumber * 3) * 5, 0, sin(2 * PI / modelNumber * 3) * 5);
+	modelColor = Vector3(std::rand() % 255, std::rand() % 255, std::rand() % 255);
+	model.SetModelColor(modelColor, 1.f);
+	n_tex = new Texture;
+	n_ntex = new Texture;
+	n_tex->OpenTexture("Data/Textures/Roof_Tiles_Terracotta_003_basecolor.jpg");
+	n_ntex->OpenTexture("Data/Textures/Roof_Tiles_Terracotta_003_normal.jpg");
+	model.AddTexture(n_tex);
+	model.AddNormalTexture(n_ntex);
+	world.LoadModel(model, offset);
+
+	offset = Vector3(cos(2 * PI / modelNumber * 4) * 5, 0, sin(2 * PI / modelNumber * 4) * 5);
+	modelColor = Vector3(std::rand() % 255, std::rand() % 255, std::rand() % 255);
+	model.SetModelColor(modelColor, 1.f);
+	n_tex = new Texture;
+	n_ntex = new Texture;
+	n_tex->OpenTexture("Data/Textures/Terracota_Tiles_003_basecolor.jpg");
+	n_ntex->OpenTexture("Data/Textures/Terracota_Tiles_003_normal.jpg");
+	model.AddTexture(n_tex);
+	model.AddNormalTexture(n_ntex);
+	world.LoadModel(model, offset);
+
+	offset = Vector3(cos(2 * PI / modelNumber * 5) * 5, 0, sin(2 * PI / modelNumber * 5) * 5);
+	modelColor = Vector3(std::rand() % 255, std::rand() % 255, std::rand() % 255);
+	model.SetModelColor(modelColor, 1.f);
+	n_tex = new Texture;
+	n_ntex = new Texture;
+	n_tex->OpenTexture("Data/Textures/Snow_004_COLOR.jpg");
+	n_ntex->OpenTexture("Data/Textures/Snow_004_NORM.jpg");
+	model.AddTexture(n_tex);
+	model.AddNormalTexture(n_ntex);
+	world.LoadModel(model, offset);
+#pragma endregion
+
+
 
 	Vector3 lightDir = Vector3(0, 0, 10);
 	Vector3 LightColor = Vector3(50, 158, 198);
@@ -237,6 +295,7 @@ int main(void)
 		}
 		world.Run();
 		previous = now;
+
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);

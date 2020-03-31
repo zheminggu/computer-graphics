@@ -15,6 +15,16 @@ void Model::AddSurfaces(Surface& surface)
 	this->surfaces.push_back(surface);
 }
 
+void Model::AddTexture(Texture* texture)
+{
+	this->texture = texture;
+}
+
+void Model::AddNormalTexture(Texture* texture)
+{
+	this->normalTexture = texture;
+}
+
 void Model::PrintModelInfo()
 {
 	std::cout << "number of vertices: " <<this->num_vertices << std::endl;

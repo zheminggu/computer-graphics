@@ -50,7 +50,7 @@ private:
 	void InitImageBuffer();
 	
 private:
-	std::vector<EdgeTable> edgeTables;
+	std::vector<std::vector<EdgeTable>> modelEdgeTables;
 	Camera mainCamera;
 	std::vector<Camera> Cameras;
 	std::vector<Model> Models;
