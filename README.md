@@ -1,7 +1,8 @@
 # Read Me
+## How to use
 This project is build with glfw3.3 FreeImage and openGL.
 
-To load model successfully, the direction of model file should not contain any space
+To load model successfully, the direction of model file should not contain any space, you can also input Data/Models/better-balls.d.txt or Data/Models/cow.d.txt to load exist models
 
 input E to start preview mode
 
@@ -63,7 +64,7 @@ Surface: model surface information
 
 Texture: containing texture of a model
 
-### important class
+### Important class
 World: world of this system
 
 World::Prerun(): This is the pipeline of render process. It dealing with Back-face culling, Init vertices vector for models, make world to view transformation and view to 
