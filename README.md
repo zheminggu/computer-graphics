@@ -26,6 +26,10 @@ input 3 to change into phong shading model
 
 right click mouse to drag model 
 
+## Project result
+![image of balls](Result/balls.gif)
+![image of cows](Result/cows.gif)
+
 
 ## Project structure 
 ### Math dir: 
@@ -48,9 +52,9 @@ Camera: the Camera in the world, calculate Mat_view and Mat_pers, defines FOV, a
 
 ClippingPlane: clipping plane of camera
 
-Debug: use to log informations
+Debug: use to log information
 
-EdgeTable: edge talble structure 
+EdgeTable: edge table structure 
 
 Light: light of the world
 

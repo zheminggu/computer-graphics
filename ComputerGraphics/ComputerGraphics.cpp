@@ -103,9 +103,27 @@ int main(void)
 {
 	Texture* n_tex = new Texture();
 	Texture* n_ntex = new Texture();
-	std::cout << "please input file path" << std::endl;
+	std::cout << "Tips" << "\n";
+	std::cout << "input E to start preview mode" << "\n";
+	std::cout << "input D to stop preview model" << "\n";
+	std::cout << "input R to start light model" << "\n";
+	std::cout << "input F to stop light model" << "\n";
+	std::cout << "input W to move forward camera" << "\n";
+	std::cout << "input S to move backward camera" << "\n";
+	std::cout << "input A to stop move camera" << "\n";
+	std::cout << "input 1 to change into constant shading model" << "\n";
+	std::cout << "input 2 to change into gouraud shading model" << "\n";
+	std::cout << "input 3 to change into phong shading model" << "\n";
+	std::cout << "right click mouse to drag model" << "\n\n";
+
+	std::cout << "to quick view default model please input " << "\n";
+	std::cout << "Data\\Models\\batter-ball.d.txt" << "\n";
+	std::cout << "Data\\Models\\cow.d.txt" << "\n\n";
+
+	std::cout << "Please Input Model File Path" << std::endl;
 	std::string file_path;
-	std::cin >> file_path;
+	std::getline(std::cin, file_path);
+	//std::cin >> file_path;
 
 	float distance = 15;
 	bool show_FPS = false;
